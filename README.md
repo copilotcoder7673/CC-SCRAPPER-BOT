@@ -40,7 +40,7 @@ Before you begin, ensure you have met the following requirements:
 - `pyrogram` and `tgcrypto` libraries. ✨Note You Can Also Use `pyrofork`
 - A Telegram bot token (you can get one from [@BotFather](https://t.me/BotFather) on Telegram).
 - API ID and Hash: You can get these by creating an application on [my.telegram.org](https://my.telegram.org).
-- To Get `SESSION_STRING` Open [@SmartUtilBot](https://t.me/SmartUtilBot). Bot and use /pyro command and then follow all instructions.
+- To Get `SESSION_STRING` Open [@ItsSmartToolBot](https://t.me/ItsSmartToolBot). Bot and use /pyro command and then follow all instructions.
 
 ## Installation
 
@@ -58,7 +58,7 @@ pip install -r requirements.txt
 2. Replace the placeholders for `API_ID`, `API_HASH`, `SESSION_STRING`, `ADMIN_IDS`, `DEFAULT_LIMIT`, `ADMIN_LIMIT` and `BOT_TOKEN` with your actual values:
    - **`API_ID`**: Your API ID from [my.telegram.org](https://my.telegram.org).
    - **`API_HASH`**: Your API Hash from [my.telegram.org](https://my.telegram.org).
-   - **`SESSION_STRING`**: The session string generated using [@SmartUtilBot](https://t.me/SmartUtilBot).
+   - **`SESSION_STRING`**: The session string generated using [@ItsSmartToolBot](https://t.me/ItsSmartToolBot).
    - **`BOT_TOKEN`**: The token you obtained from [@BotFather](https://t.me/BotFather).
 
 3. **Optional VARS**:
