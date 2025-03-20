@@ -4,15 +4,15 @@ import asyncio
 import logging
 import aiofiles
 from pyrogram import Client, filters
-from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired, InviteHashInvalid, PeerIdInvalid
+from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired, InviteHashInvalid, PeerIdInvalid, InviteRequestSent
 from urllib.parse import urlparse
-from config import API_ID, API_HASH, BOT_TOKEN, SESSION_STRING, ADMIN_IDS, DEFAULT_LIMIT, ADMIN_LIMIT
+from config import API_ID, API_HASH, BOT_TOKEN, SESSION_STRING, ADMIN_LIMIT, ADMIN_IDS, DEFAULT_LIMIT
 
-# Setup logging
+# Setup logging For Capturing Erros
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize the app and user clients
+# Initialize Bot Client With Workers
 app = Client(
     "app_session",
     api_id=API_ID,
@@ -21,7 +21,7 @@ app = Client(
     workers=1000
 )
 
-# Initialize the user client
+# Initialize User Client With Workers
 user = Client(
     "user_session",
     session_string=SESSION_STRING,
@@ -83,19 +83,19 @@ async def send_results(client, message, unique_messages, duplicates_removed, sou
             caption = (
                 f"<b>CC Scrapped Successful ✅</b>\n"
                 f"<b>━━━━━━━━━━━━━━━━</b>\n"
-                f"<b>Source:</b> <code>{source_name}</code>\n"
-                f"<b>Amount:</b> <code>{len(unique_messages)}</code>\n"
-                f"<b>Duplicates Removed:</b> <code>{duplicates_removed}</code>\n"
+                f"<b>Source:</b> <code>{source_name} 🌐</code>\n"
+                f"<b>Amount:</b> <code>{len(unique_messages)} 📝</code>\n"
+                f"<b>Duplicates Removed:</b> <code>{duplicates_removed} 🗑️</code>\n"
             )
             # Add BIN filter to caption if provided
             if bin_filter:
-                caption += f"<b>BIN Filter:</b> <code>{bin_filter}</code>\n"
+                caption += f"<b>📝 BIN Filter:</b> <code>{bin_filter}</code>\n"
             # Add Bank filter to caption if provided
             if bank_filter:
-                caption += f"<b>Bank Filter:</b> <code>{bank_filter}</code>\n"
+                caption += f"<b>📝 Bank Filter:</b> <code>{bank_filter}</code>\n"
             caption += (
                 f"<b>━━━━━━━━━━━━━━━━</b>\n"
-                f"<b>Card-Scrapped By: {user_link}</b>\n"
+                f"<b>✅ Card-Scrapped By: {user_link}</b>\n"
             )
             await client.send_document(message.chat.id, file_name, caption=caption)
         os.remove(file_name)
@@ -106,7 +106,7 @@ async def send_results(client, message, unique_messages, duplicates_removed, sou
 
 async def get_user_link(message):
     if message.from_user is None:
-        return '<a href="https://t.me/SmartTool404Bot">404 Smart Tool</a>'
+        return '<a href="https://t.me/ItsSmartToolBot">Smart Tool</a>'
     else:
         user_first_name = message.from_user.first_name
         user_last_name = message.from_user.last_name or ""
@@ -121,6 +121,9 @@ async def join_private_chat(client, invite_link):
     except UserAlreadyParticipant:
         logger.info(f"Already a participant in the chat: {invite_link}")
         return True
+    except InviteRequestSent:
+        logger.info(f"Join request sent to the chat: {invite_link}")
+        return False
     except (InviteHashExpired, InviteHashInvalid) as e:
         logger.error(f"Failed to join chat {invite_link}: {e}")
         return False
@@ -141,7 +144,7 @@ def setup_scr_handler(app):
         user_id = message.from_user.id if message.from_user else None
 
         if len(args) < 2:
-            await message.reply_text("<b>⚠️ Provide channel username, invite link, or chat ID and amount to scrape ❌</b>")
+            await message.reply_text("<b>⚠️ Provide channel username and amount to scrape ❌</b>")
             logger.warning("Invalid command: Missing arguments")
             return
 
@@ -161,7 +164,7 @@ def setup_scr_handler(app):
                 channel_name = chat.title
                 logger.info(f"Scraping from private channel: {channel_name} (ID: {chat_id})")
             except Exception as e:
-                await message.reply_text("<b>Hey Bro! 🥲 Invalid chat ID or you don't have access to this private channel ❌</b>")
+                await message.reply_text("<b>Hey Bro! 🥲 Invalid chat ID ❌</b>")
                 logger.error(f"Failed to fetch private channel: {e}")
                 return
         else:
@@ -173,7 +176,7 @@ def setup_scr_handler(app):
                 if not joined:
                     request_sent = await send_join_request(user, invite_link)
                     if request_sent:
-                        await message.reply_text("<b>Hey Bro I Have Sent Join Request</b>")
+                        await message.reply_text("<b>Hey Bro I Have Sent Join Request✅</b>")
                     else:
                         await message.reply_text("<b>Hey Bro! 🥲 Invalid or expired invite link ❌</b>")
                     return
@@ -234,11 +237,11 @@ def setup_scr_handler(app):
             return
 
         # Send a temporary message to check the username
-        temporary_msg = await message.reply_text("<b>Checking the username... ⌛️</b>")
+        temporary_msg = await message.reply_text("<b>Checking The Username...</b>")
         await asyncio.sleep(1.5)
 
         # Start scraping
-        await temporary_msg.edit_text("<b>⚡️ Scraping in progress. Please wait... ⌛️</b>")
+        await temporary_msg.edit_text("<b>Scrapping In Progress</b>")
         scrapped_results = await scrape_messages(user, chat.id, limit, start_number=start_number, bank_name=bank_name)
         unique_messages, duplicates_removed = remove_duplicates(scrapped_results)
         await temporary_msg.delete()
@@ -250,7 +253,7 @@ def setup_scr_handler(app):
     async def mc_cmd(client, message):
         args = message.text.split()[1:]
         if len(args) < 2:
-            await client.send_message(message.chat.id, "<b>⚠️ Provide at least one channel username and amount to scrape</b>")
+            await client.send_message(message.chat.id, "<b>⚠️ Provide at least one channel username</b>")
             logger.warning("Invalid command: Missing arguments")
             return
 
@@ -264,7 +267,7 @@ def setup_scr_handler(app):
             logger.warning(f"Limit exceeded: {limit} > {max_lim}")
             return
 
-        temporary_msg = await client.send_message(message.chat.id, "<b>⚡️ Scraping in progress wait.....⌛️</b>")
+        temporary_msg = await client.send_message(message.chat.id, "<b>Scrapping In Progress</b>")
         all_messages = []
         for channel_identifier in channel_identifiers:
             parsed_url = urlparse(channel_identifier)
