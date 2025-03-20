@@ -22,7 +22,7 @@ from config import (
     DEFAULT_LIMIT
 )
 
-# Setup logging For Capturing Erros
+# Setup logging For Capturing Errors
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -284,35 +284,17 @@ def setup_scr_handler(app):
 
         temporary_msg = await client.send_message(message.chat.id, "<b>Scraping In Progress</b>")
         all_messages = []
+        tasks = []
+
         for channel_identifier in channel_identifiers:
             parsed_url = urlparse(channel_identifier)
             channel_username = parsed_url.path.lstrip('/') if not parsed_url.scheme else channel_identifier
 
-            try:
-                chat = None
-                if channel_username.startswith("https://t.me/+"):
-                    invite_link = channel_username
-                    joined = await join_private_chat(user, invite_link)
-                    if not joined:
-                        request_sent = await send_join_request(user, invite_link)
-                        if request_sent:
-                            await client.send_message(message.chat.id, f"<b>Hey Bro I Have Sent Join Request to {channel_username}</b>")
-                            continue
-                        else:
-                            await client.send_message(message.chat.id, f"<b>Hey Bro! 🥲 Invalid or expired invite link for {channel_username} ❌</b>")
-                            continue
-                    else:
-                        chat = await user.get_chat(invite_link)
-                else:
-                    chat = await user.get_chat(channel_username)
+            tasks.append(scrape_messages_task(user, channel_username, limit, client, message))
 
-                scrapped_results = await scrape_messages(user, chat.id, limit)
-                all_messages.extend(scrapped_results)
-                logger.info(f"Scraped {len(scrapped_results)} messages from {channel_username}")
-            except Exception as e:
-                await client.send_message(message.chat.id, f"<b>Hey Bro! 🥲 Incorrect username for {channel_identifier} ❌</b>")
-                logger.error(f"Failed to scrape from {channel_identifier}: {e}")
-                continue
+        results = await asyncio.gather(*tasks)
+        for result in results:
+            all_messages.extend(result)
 
         unique_messages, duplicates_removed = remove_duplicates(all_messages)
         unique_messages = unique_messages[:limit]
@@ -321,6 +303,31 @@ def setup_scr_handler(app):
             await temporary_msg.edit_text("<b>Sorry Bro ❌ No Credit Card Found</b>")
         else:
             await send_results(client, temporary_msg, unique_messages, duplicates_removed, "Multiple Chats")
+
+async def scrape_messages_task(client, channel_username, limit, bot_client, message):
+    try:
+        chat = None
+        if channel_username.startswith("https://t.me/+"):
+            invite_link = channel_username
+            joined = await join_private_chat(client, invite_link)
+            if not joined:
+                request_sent = await send_join_request(client, invite_link)
+                if request_sent:
+                    await bot_client.send_message(message.chat.id, f"<b>Hey Bro I Have Sent Join Request to {channel_username}</b>")
+                    return []
+                else:
+                    await bot_client.send_message(message.chat.id, f"<b>Hey Bro! 🥲 Invalid or expired invite link for {channel_username} ❌</b>")
+                    return []
+            else:
+                chat = await client.get_chat(invite_link)
+        else:
+            chat = await client.get_chat(channel_username)
+
+        return await scrape_messages(client, chat.id, limit)
+    except Exception as e:
+        await bot_client.send_message(message.chat.id, f"<b>Hey Bro! 🥲 Incorrect username for {channel_username} ❌</b>")
+        logger.error(f"Failed to scrape from {channel_username}: {e}")
+        return []
 
 if __name__ == "__main__":
     setup_scr_handler(app)
