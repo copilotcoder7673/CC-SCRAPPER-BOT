@@ -142,13 +142,17 @@ async def join_private_chat(client, invite_link):
         logger.error(f"Failed to join chat {invite_link}: {e}")
         return False
 
-async def send_join_request(client, invite_link):
+async def send_join_request(client, invite_link, message):
     try:
-        await client.send_chat_join_request(invite_link)
+        await client.join_chat(invite_link)
         logger.info(f"Sent join request to chat: {invite_link}")
         return True
     except PeerIdInvalid as e:
         logger.error(f"Failed to send join request to chat {invite_link}: {e}")
+        return False
+    except InviteRequestSent:
+        logger.info(f"Join request sent to the chat: {invite_link}")
+        await message.edit_text("<b>Hey Bro I Have Sent Join Request✅</b>")
         return False
 
 def setup_scr_handler(app):
@@ -186,15 +190,14 @@ def setup_scr_handler(app):
             if channel_identifier.startswith("https://t.me/+"):
                 # Private invite link
                 invite_link = channel_identifier
+                temporary_msg = await client.send_message(message.chat.id, "<b>Checking Username...</b>")
                 joined = await join_private_chat(user, invite_link)
                 if not joined:
-                    request_sent = await send_join_request(user, invite_link)
-                    if request_sent:
-                        await client.send_message(message.chat.id, "<b>Hey Bro I Have Sent Join Request✅</b>")
-                    else:
-                        await client.send_message(message.chat.id, "<b>Hey Bro! 🥲 Invalid or expired invite link ❌</b>")
-                    return
+                    request_sent = await send_join_request(user, invite_link, temporary_msg)
+                    if not request_sent:
+                        return
                 else:
+                    await temporary_msg.delete()
                     chat = await user.get_chat(invite_link)
                     channel_name = chat.title
                     logger.info(f"Joined private channel via link: {channel_name}")
@@ -309,16 +312,14 @@ async def scrape_messages_task(client, channel_username, limit, bot_client, mess
         chat = None
         if channel_username.startswith("https://t.me/+"):
             invite_link = channel_username
+            temporary_msg = await bot_client.send_message(message.chat.id, "<b>Checking Username...</b>")
             joined = await join_private_chat(client, invite_link)
             if not joined:
-                request_sent = await send_join_request(client, invite_link)
-                if request_sent:
-                    await bot_client.send_message(message.chat.id, f"<b>Hey Bro I Have Sent Join Request to {channel_username}</b>")
-                    return []
-                else:
-                    await bot_client.send_message(message.chat.id, f"<b>Hey Bro! 🥲 Invalid or expired invite link for {channel_username} ❌</b>")
+                request_sent = await send_join_request(client, invite_link, temporary_msg)
+                if not request_sent:
                     return []
             else:
+                await temporary_msg.delete()
                 chat = await client.get_chat(invite_link)
         else:
             chat = await client.get_chat(channel_username)
