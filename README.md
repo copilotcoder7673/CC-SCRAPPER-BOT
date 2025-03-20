@@ -162,4 +162,4 @@ python scr.py
 - Name: Abir Arafat Chawdhury
 - Telegram: [@ModVip_rm](https://t.me/ModVip_rm)
 
-Feel free to reach out if you have any questions or feedback In My Telegram [Abir Arafat Chawdhury] (t.me/abirxdhackz) 
+Feel free to reach out if you have any questions or feedback In My Telegram [Abir Arafat Chawdhury](t.me/abirxdhackz) 
