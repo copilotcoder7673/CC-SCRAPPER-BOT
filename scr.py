@@ -111,6 +111,7 @@ async def send_results(client, message, unique_messages, duplicates_removed, sou
                 f"<b>━━━━━━━━━━━━━━━━</b>\n"
                 f"<b>✅ Card-Scrapped By: {user_link}</b>\n"
             )
+            await message.delete()
             await client.send_document(message.chat.id, file_name, caption=caption)
         os.remove(file_name)
         logger.info(f"Results sent successfully for {source_name}")
