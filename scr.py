@@ -3,6 +3,8 @@ import os
 import asyncio
 import logging
 import aiofiles
+from pyrogram.enums import ParseMode
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram import Client, filters
 from pyrogram.errors import (
     UserAlreadyParticipant,
@@ -41,6 +43,36 @@ user = Client(
     session_string=SESSION_STRING,
     workers=1000
 )
+
+
+START_MESSAGE = """
+<b>Welcome to the Credit Card Scraper Bot 🕵️‍♂️💳</b>
+
+I'm here to help you scrape credit card information from Telegram channels.
+Use the commands below to get started:
+
+/scr [channel_username] [limit] - Scrape from a single channel. 📺
+/mc [channel_username1] [channel_username2] ... [limit] - Scrape from multiple channels. 📡
+
+<strong>Examples:</strong>
+/scr @username 100 515462
+/scr @username 100 BankName
+/scr username 100 
+/scr username 100 515462
+/scr username 100 BankName
+/scr t.me/username 100
+/scr t.me/username 100 515462
+/scr t.me/username 100 Bank Name
+/scr https://t.me/username 100 
+/scr https://t.me/username 100 515462
+/scr https://t.me/username Bank Name
+/scr https://t.me/+ZBqGFP5evRpmY2Y1 100
+/scr https://t.me/+ZBqGFP5evRpmY2Y1 100 515462
+/scr https://t.me/+ZBqGFP5evRpmY2Y1 100 BankName
+
+Happy scraping! 🚀
+"""
+
 
 async def scrape_messages(client, channel_username, limit, start_number=None, bank_name=None):
     messages = []
@@ -157,7 +189,7 @@ async def send_join_request(client, invite_link, message):
         return False
 
 def setup_scr_handler(app):
-    @app.on_message(filters.command(["scr", "ccscr", "scrcc"], prefixes=["/", "."]) & (filters.group | filters.private))
+    @app.on_message(filters.command(["scr", "ccscr", "scrcc"], prefixes=["/", ".", ",", "!"]) & (filters.group | filters.private))
     async def scr_cmd(client, message):
         args = message.text.split()[1:]
         user_id = message.from_user.id if message.from_user else None
@@ -268,7 +300,7 @@ def setup_scr_handler(app):
         else:
             await send_results(client, temporary_msg, unique_messages, duplicates_removed, channel_name, bin_filter=bin_filter, bank_filter=bank_name)
 
-    @app.on_message(filters.command(["mc", "multiscr", "mscr"], prefixes=["/", "."]) & (filters.group | filters.private))
+    @app.on_message(filters.command(["mc", "multiscr", "mscr"], prefixes=["/", ".", ",", "!"]) & (filters.group | filters.private))
     async def mc_cmd(client, message):
         args = message.text.split()[1:]
         if len(args) < 2:
@@ -330,6 +362,13 @@ async def scrape_messages_task(client, channel_username, limit, bot_client, mess
         await bot_client.send_message(message.chat.id, f"<b>Hey Bro! 🥲 Incorrect username for {channel_username} ❌</b>")
         logger.error(f"Failed to scrape from {channel_username}: {e}")
         return []
+
+@app.on_message(filters.command("start", prefixes=["/", ".", ",", "!"]) & (filters.group | filters.private))
+async def start(client, message):
+    buttons = [
+        [InlineKeyboardButton("Update Channel", url="https://t.me/Modvip_rm"), InlineKeyboardButton("My Dev👨‍💻", user_id=7303810912)]
+    ]
+    await client.send_message(message.chat.id, START_MESSAGE, parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=InlineKeyboardMarkup(buttons))
 
 if __name__ == "__main__":
     setup_scr_handler(app)
